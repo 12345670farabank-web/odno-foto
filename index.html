@@ -1,470 +1,398 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ОДНО ФОТО</title>
 
-    <title>ОДНО ФОТО</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      color: #111;
+    }
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f5f5f5;
-            color: #111;
-        }
+    header {
+      text-align: center;
+      padding: 60px 20px 40px;
+      background: white;
+    }
 
-        header {
-            text-align: center;
-            padding: 60px 20px 40px;
-            background: white;
-        }
+    h1 {
+      font-size: 48px;
+      margin: 0 0 15px;
+      letter-spacing: 2px;
+    }
 
-        h1 {
-            font-size: 48px;
-            margin: 0 0 15px;
-            letter-spacing: 2px;
-        }
+    header p {
+      max-width: 600px;
+      margin: 0 auto 30px;
+      color: #666;
+      line-height: 1.5;
+    }
 
-        header p {
-            max-width: 600px;
-            margin: 0 auto 30px;
-            color: #666;
-            line-height: 1.5;
-        }
+    button {
+      border: 0;
+      background: #111;
+      color: white;
+      padding: 14px 22px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      margin: 5px;
+    }
 
-        button {
-            border: none;
-            background: #111;
-            color: white;
-            padding: 14px 22px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 15px;
-            margin: 5px;
-        }
+    .upload {
+      max-width: 600px;
+      margin: 30px auto;
+      padding: 25px;
+      background: white;
+      border-radius: 15px;
+    }
 
-        button:hover {
-            opacity: 0.8;
-        }
+    .upload input {
+      width: 100%;
+      padding: 13px;
+      margin: 8px 0;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
 
-        .upload {
-            max-width: 600px;
-            margin: 30px auto;
-            padding: 25px;
-            background: white;
-            border-radius: 15px;
-        }
+    .hidden {
+      display: none;
+    }
 
-        .upload input {
-            width: 100%;
-            padding: 13px;
-            margin: 8px 0;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-        }
+    .gallery-section {
+      max-width: 1100px;
+      margin: 40px auto;
+      padding: 20px;
+    }
 
-        .hidden {
-            display: none;
-        }
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 15px;
+    }
 
-        section.gallery-section {
-            max-width: 1100px;
-            margin: 40px auto;
-            padding: 20px;
-        }
+    .photo-card {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+    }
 
-        .gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 15px;
-        }
+    .photo-card img {
+      width: 100%;
+      height: 240px;
+      object-fit: cover;
+      display: block;
+    }
 
-        .photo-card {
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            cursor: pointer;
-        }
+    .photo-info {
+      padding: 12px;
+    }
 
-        .photo-card img {
-            width: 100%;
-            height: 240px;
-            object-fit: cover;
-            display: block;
-        }
-
-        .photo-info {
-            padding: 12px;
-        }
-
-        .photo-info p {
-            margin: 5px 0;
-            color: #666;
-        }
-
-        .status {
-            margin-top: 10px;
-        }
-    </style>
+    .photo-info p {
+      margin: 5px 0;
+      color: #666;
+    }
+  </style>
 </head>
 
 <body>
 
 <header>
-    <h1>ОДНО ФОТО</h1>
+  <h1>ОДНО ФОТО</h1>
 
-    <p>
-        У каждого человека есть только одна фотография.
-        Оставь здесь момент, который хочешь сохранить.
-    </p>
+  <p>
+    У каждого человека есть только одна фотография.
+    Оставь здесь момент, который хочешь сохранить.
+  </p>
 
-    <button onclick="openUpload()">
-        ОСТАВИТЬ ФОТО
-    </button>
-
-    <button onclick="randomPhoto()">
-        СЛУЧАЙНОЕ ФОТО
-    </button>
+  <button id="openUploadBtn">ОСТАВИТЬ ФОТО</button>
+  <button id="randomBtn">СЛУЧАЙНОЕ ФОТО</button>
 </header>
 
 <section id="upload" class="upload hidden">
 
-    <h2>Оставь свою фотографию</h2>
+  <h2>Оставь свою фотографию</h2>
 
-    <input
-        type="file"
-        id="photoInput"
-        accept="image/*"
-    >
+  <input type="file" id="photoInput" accept="image/*">
 
-    <input
-        type="text"
-        id="cityInput"
-        placeholder="Город — необязательно"
-    >
+  <input
+    type="text"
+    id="cityInput"
+    placeholder="Город — необязательно"
+  >
 
-    <input
-        type="text"
-        id="captionInput"
-        placeholder="Подпись — необязательно"
-    >
+  <input
+    type="text"
+    id="captionInput"
+    placeholder="Подпись — необязательно"
+  >
 
-    <button onclick="uploadPhoto()">
-        СОХРАНИТЬ ФОТО
-    </button>
+  <button id="saveBtn">СОХРАНИТЬ ФОТО</button>
 
-    <p id="uploadStatus" class="status"></p>
+  <p id="uploadStatus"></p>
 
 </section>
 
 <section class="gallery-section">
 
-    <h2>ПОСЛЕДНИЕ ФОТО</h2>
+  <h2>ПОСЛЕДНИЕ ФОТО</h2>
 
-    <div id="gallery" class="gallery">
-        Загружаем фотографии...
-    </div>
+  <div id="gallery" class="gallery">
+    Загружаем фотографии...
+  </div>
 
 </section>
 
 <script>
 
-    // =====================================
-    // ДАННЫЕ SUPABASE
-    // =====================================
+const SUPABASE_URL = "https://nnymuczbnpmcylsxsbvc.supabase.co/rest/v1/";
+const SUPABASE_KEY = "sb_publishable_21uVPPJ3SSWWVPT4ppv86Q_EFEGHwnB";
 
-    const SUPABASE_URL = "https://nnymuczbnpmcylsxsbvc.supabase.co/rest/v1/23:02";
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
 
-    const SUPABASE_KEY = "sb_publishable_21uVPPJ3SSWWVPT4ppv86Q_EFEGHwnB23:01";
+const uploadSection = document.getElementById("upload");
+const uploadStatus = document.getElementById("uploadStatus");
 
-    const supabaseClient = supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_KEY
-    );
+document.getElementById("openUploadBtn").addEventListener("click", function () {
+  uploadSection.classList.toggle("hidden");
+});
 
+document.getElementById("saveBtn").addEventListener("click", uploadPhoto);
 
-    // =====================================
-    // ОТКРЫТЬ ФОРМУ
-    // =====================================
+document.getElementById("randomBtn").addEventListener("click", randomPhoto);
 
-    function openUpload() {
+async function uploadPhoto() {
 
-        document
-            .getElementById("upload")
-            .classList.toggle("hidden");
+  const file =
+    document.getElementById("photoInput").files[0];
+
+  const city =
+    document.getElementById("cityInput").value.trim();
+
+  const caption =
+    document.getElementById("captionInput").value.trim();
+
+  if (!file) {
+
+    uploadStatus.textContent =
+      "Сначала выбери фотографию.";
+
+    return;
+  }
+
+  uploadStatus.textContent =
+    "Загружаем фотографию...";
+
+  const safeName =
+    file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+
+  const fileName =
+    Date.now() + "-" + safeName;
+
+  const uploadResult =
+    await supabaseClient
+      .storage
+      .from("photos")
+      .upload(fileName, file);
+
+  if (uploadResult.error) {
+
+    console.error(uploadResult.error);
+
+    uploadStatus.textContent =
+      "Ошибка загрузки фотографии.";
+
+    return;
+  }
+
+  const publicResult =.storage
+      .from("photos")
+      .getPublicUrl(fileName);
+
+  const imageUrl =
+    publicResult.data.publicUrl;
+
+  const insertResult =
+    await supabaseClient
+      .from("photos")
+      .insert({
+
+        image_url: imageUrl,
+
+        city: city,
+
+        caption: caption
+
+      });
+
+  if (insertResult.error) {
+
+    console.error(insertResult.error);
+
+    uploadStatus.textContent =
+      "Фото загрузилось, но не удалось сохранить данные.";
+
+    return;
+  }
+
+  uploadStatus.textContent =
+    "Готово! Фотография появилась в галерее.";
+
+  document.getElementById("photoInput").value = "";
+  document.getElementById("cityInput").value = "";
+  document.getElementById("captionInput").value = "";
+
+  loadPhotos();
+
+}
+
+async function loadPhotos() {
+
+  const gallery =
+    document.getElementById("gallery");
+
+  const result =
+    await supabaseClient
+      .from("photos")
+      .select("*")
+      .order("created_at", {
+        ascending: false
+      });
+
+  if (result.error) {
+
+    console.error(result.error);
+
+    gallery.textContent =
+      "Не удалось загрузить фотографии.";
+
+    return;
+  }
+
+  if (!result.data || result.data.length === 0) {
+
+    gallery.textContent =
+      "Пока здесь нет фотографий.";
+
+    return;
+  }
+
+  gallery.innerHTML = "";
+
+  result.data.forEach(function (photo) {
+
+    const card =
+      document.createElement("div");
+
+    card.className =
+      "photo-card";
+
+    const img =
+      document.createElement("img");
+
+    img.src =
+      photo.image_url;
+
+    img.alt =
+      "Фото";
+
+    const info =
+      document.createElement("div");
+
+    info.className =
+      "photo-info";
+
+    if (photo.city) {
+
+      const city =
+        document.createElement("p");
+
+      city.textContent =
+        "📍 " + photo.city;
+
+      info.appendChild(city);
 
     }
 
+    if (photo.caption) {
 
-    // =====================================
-    // ЗАГРУЗКА ФОТО// =====================================
+      const caption =
+        document.createElement("p");
 
-    async function uploadPhoto() {
+      caption.textContent =
+        photo.caption;
 
-        const file =
-            document.getElementById("photoInput").files[0];
-
-        const city =
-            document.getElementById("cityInput").value;
-
-        const caption =
-            document.getElementById("captionInput").value;
-
-        const status =
-            document.getElementById("uploadStatus");
-
-
-        if (!file) {
-
-            status.textContent =
-                "Сначала выбери фотографию.";
-
-            return;
-        }
-
-
-        status.textContent =
-            "Загружаем фотографию...";
-
-
-        const fileName =
-            Date.now() + "-" + file.name;
-
-
-        // Загружаем фотографию в Storage
-
-        const { error: uploadError } =
-            await supabaseClient
-                .storage
-                .from("photos")
-                .upload(fileName, file);
-
-
-        if (uploadError) {
-
-            console.error(uploadError);
-
-            status.textContent =
-                "Ошибка загрузки фотографии.";
-
-            return;
-        }
-
-
-        // Получаем публичную ссылку
-
-        const { data: publicUrlData } =
-            supabaseClient
-                .storage
-                .from("photos")
-                .getPublicUrl(fileName);
-
-
-        const imageUrl =
-            publicUrlData.publicUrl;
-
-
-        // Записываем информацию в таблицу
-
-        const { error: databaseError } =
-            await supabaseClient
-                .from("photos")
-                .insert({
-
-                    image_url: imageUrl,
-
-                    city: city,
-
-                    caption: caption
-
-                });
-
-
-        if (databaseError) {
-
-            console.error(databaseError);
-
-            status.textContent =
-                "Фото загрузилось, но произошла ошибка сохранения.";
-
-            return;
-        }
-
-
-        status.textContent =
-            "Готово! Фотография появилась в ОДНО ФОТО.";
-
-        document.getElementById("photoInput").value = "";
-
-        document.getElementById("cityInput").value = "";
-
-        document.getElementById("captionInput").value = "";
-
-
-        loadPhotos();
+      info.appendChild(caption);
 
     }
 
+    card.appendChild(img);
 
-    // =====================================
-    // ЗАГРУЗКА ГАЛЕРЕИ
-    // =====================================
+    card.appendChild(info);
 
-    async function loadPhotos() {
+    gallery.appendChild(card);
 
-        const gallery =
-            document.getElementById("gallery");
+  });
 
+}
 
-        const { data, error } =
-            await supabaseClient
-                .from("photos")
-                .select("*")
-                .order("created_at", {
-                    ascending: false
-                });
+async function randomPhoto() {
 
+  const result =
+    await supabaseClient
+      .from("photos")
+      .select("*");
 
-        if (error) {
+  if (
+    result.error ||
+    !result.data ||
+    result.data.length === 0
+  ) {
 
-            console.error(error);
+    alert("Пока нет фотографий.");
 
-            gallery.innerHTML =
-                "Не удалось загрузить фотографии.";
+    return;
+  }
 
-            return;
-        }
+  const photo =
+    result.data[
+      Math.floor(
+        Math.random() * result.data.length
+      )
+    ];
 
+  let message = "";
 
-        if (!data || data.length === 0) {
+  if (photo.city) {
 
-            gallery.innerHTML =
-                "Пока здесь нет фотографий.";
+    message +=
+      "📍 " + photo.city + "\n\n";
 
-            return;
-        }
+  }
 
+  message +=
+    photo.caption || "Без подписи";
 
-        gallery.innerHTML = "";
+  alert(message);
 
+}
 
-        data.forEach(photo => {
-
-            const card =
-                document.createElement("div");
-
-            card.className =
-                "photo-card";
-
-
-            card.innerHTML = `
-
-                <img
-                    src="${photo.image_url}"
-                    alt="Фото"
-                >
-
-                <div class="photo-info">
-
-                    ${
-                        photo.city
-                        ? <p>📍 ${escapeHtml(photo.city)}</p>
-                        : ""
-                    }
-
-                    ${
-                        photo.caption
-                        ? <p>${escapeHtml(photo.caption)}</p>
-                        : ""
-                    }
-
-                </div>
-
-            `;
-
-
-            gallery.appendChild(card);
-
-        });
-
-    }
-
-
-    // =====================================
-    // СЛУЧАЙНОЕ ФОТО
-    // =====================================
-
-    async function randomPhoto() {
-
-        const { data, error } =
-            await supabaseClient
-                .from("photos")
-                .select("*");
-
-
-        if (error  !data  data.length === 0) {
-
-            alert("Пока нет фотографий.");
-
-            return;
-        }
-
-
-        const random =
-            data[Math.floor(Math.random() * data.length)];
-
-
-        window.scrollTo({
-            top: 0,
-            behavior: "smooth"
-        });
-
-
-        setTimeout(() => {
-
-            alert(
-                (random.city
-                    ? "📍 " + random.city + "\n\n"
-                    : "") +
-
-                (random.caption || "Без подписи")
-            );
-
-        }, 400);
-
-    }
-
-
-    // =====================================
-    // БЕЗОПАСНОСТЬ ТЕКСТА
-    // =====================================
-
-    function escapeHtml(text) {
-
-        const div =
-            document.createElement("div");
-
-        div.textContent = text;
-
-        return div.innerHTML;
-
-    }
-
-
-    // =====================================
-    // ЗАПУСК
-    // =====================================
-
-    loadPhotos();
+loadPhotos();
 
 </script>
 
 </body>
-</html>
+</html> supabaseClient

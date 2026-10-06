@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>ОДНО ФОТО</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            color: #111;
+        }
+
+        header {
+            text-align: center;
+            padding: 60px 20px 40px;
+            background: white;
+        }
+
+        h1 {
+            font-size: 48px;
+            margin: 0 0 15px;
+            letter-spacing: 2px;
+        }
+
+        header p {
+            max-width: 600px;
+            margin: 0 auto 30px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        button {
+            border: none;
+            background: #111;
+            color: white;
+            padding: 14px 22px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            margin: 5px;
+        }
+
+        button:hover {
+            opacity: 0.8;
+        }
+
+        .upload {
+            max-width: 600px;
+            margin: 30px auto;
+            padding: 25px;
+            background: white;
+            border-radius: 15px;
+        }
+
+        .upload input {
+            width: 100%;
+            padding: 13px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        section.gallery-section {
+            max-width: 1100px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 15px;
+        }
+
+        .photo-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .photo-card img {
+            width: 100%;
+            height: 240px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .photo-info {
+            padding: 12px;
+        }
+
+        .photo-info p {
+            margin: 5px 0;
+            color: #666;
+        }
+
+        .status {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>ОДНО ФОТО</h1>
+
+    <p>
+        У каждого человека есть только одна фотография.
+        Оставь здесь момент, который хочешь сохранить.
+    </p>
+
+    <button onclick="openUpload()">
+        ОСТАВИТЬ ФОТО
+    </button>
+
+    <button onclick="randomPhoto()">
+        СЛУЧАЙНОЕ ФОТО
+    </button>
+</header>
+
+<section id="upload" class="upload hidden">
+
+    <h2>Оставь свою фотографию</h2>
+
+    <input
+        type="file"
+        id="photoInput"
+        accept="image/*"
+    >
+
+    <input
+        type="text"
+        id="cityInput"
+        placeholder="Город — необязательно"
+    >
+
+    <input
+        type="text"
+        id="captionInput"
+        placeholder="Подпись — необязательно"
+    >
+
+    <button onclick="uploadPhoto()">
+        СОХРАНИТЬ ФОТО
+    </button>
+
+    <p id="uploadStatus" class="status"></p>
+
+</section>
+
+<section class="gallery-section">
+
+    <h2>ПОСЛЕДНИЕ ФОТО</h2>
+
+    <div id="gallery" class="gallery">
+        Загружаем фотографии...
+    </div>
+
+</section>
+
+<script>
+
+    // =====================================
+    // ДАННЫЕ SUPABASE
+    // =====================================
+
+    const SUPABASE_URL = "https://nnymuczbnpmcylsxsbvc.supabase.co/rest/v1/23:02";
+
+    const SUPABASE_KEY = "sb_publishable_21uVPPJ3SSWWVPT4ppv86Q_EFEGHwnB23:01";
+
+    const supabaseClient = supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
+
+
+    // =====================================
+    // ОТКРЫТЬ ФОРМУ
+    // =====================================
+
+    function openUpload() {
+
+        document
+            .getElementById("upload")
+            .classList.toggle("hidden");
+
+    }
+
+
+    // =====================================
+    // ЗАГРУЗКА ФОТО// =====================================
+
+    async function uploadPhoto() {
+
+        const file =
+            document.getElementById("photoInput").files[0];
+
+        const city =
+            document.getElementById("cityInput").value;
+
+        const caption =
+            document.getElementById("captionInput").value;
+
+        const status =
+            document.getElementById("uploadStatus");
+
+
+        if (!file) {
+
+            status.textContent =
+                "Сначала выбери фотографию.";
+
+            return;
+        }
+
+
+        status.textContent =
+            "Загружаем фотографию...";
+
+
+        const fileName =
+            Date.now() + "-" + file.name;
+
+
+        // Загружаем фотографию в Storage
+
+        const { error: uploadError } =
+            await supabaseClient
+                .storage
+                .from("photos")
+                .upload(fileName, file);
+
+
+        if (uploadError) {
+
+            console.error(uploadError);
+
+            status.textContent =
+                "Ошибка загрузки фотографии.";
+
+            return;
+        }
+
+
+        // Получаем публичную ссылку
+
+        const { data: publicUrlData } =
+            supabaseClient
+                .storage
+                .from("photos")
+                .getPublicUrl(fileName);
+
+
+        const imageUrl =
+            publicUrlData.publicUrl;
+
+
+        // Записываем информацию в таблицу
+
+        const { error: databaseError } =
+            await supabaseClient
+                .from("photos")
+                .insert({
+
+                    image_url: imageUrl,
+
+                    city: city,
+
+                    caption: caption
+
+                });
+
+
+        if (databaseError) {
+
+            console.error(databaseError);
+
+            status.textContent =
+                "Фото загрузилось, но произошла ошибка сохранения.";
+
+            return;
+        }
+
+
+        status.textContent =
+            "Готово! Фотография появилась в ОДНО ФОТО.";
+
+        document.getElementById("photoInput").value = "";
+
+        document.getElementById("cityInput").value = "";
+
+        document.getElementById("captionInput").value = "";
+
+
+        loadPhotos();
+
+    }
+
+
+    // =====================================
+    // ЗАГРУЗКА ГАЛЕРЕИ
+    // =====================================
+
+    async function loadPhotos() {
+
+        const gallery =
+            document.getElementById("gallery");
+
+
+        const { data, error } =
+            await supabaseClient
+                .from("photos")
+                .select("*")
+                .order("created_at", {
+                    ascending: false
+                });
+
+
+        if (error) {
+
+            console.error(error);
+
+            gallery.innerHTML =
+                "Не удалось загрузить фотографии.";
+
+            return;
+        }
+
+
+        if (!data || data.length === 0) {
+
+            gallery.innerHTML =
+                "Пока здесь нет фотографий.";
+
+            return;
+        }
+
+
+        gallery.innerHTML = "";
+
+
+        data.forEach(photo => {
+
+            const card =
+                document.createElement("div");
+
+            card.className =
+                "photo-card";
+
+
+            card.innerHTML = `
+
+                <img
+                    src="${photo.image_url}"
+                    alt="Фото"
+                >
+
+                <div class="photo-info">
+
+                    ${
+                        photo.city
+                        ? <p>📍 ${escapeHtml(photo.city)}</p>
+                        : ""
+                    }
+
+                    ${
+                        photo.caption
+                        ? <p>${escapeHtml(photo.caption)}</p>
+                        : ""
+                    }
+
+                </div>
+
+            `;
+
+
+            gallery.appendChild(card);
+
+        });
+
+    }
+
+
+    // =====================================
+    // СЛУЧАЙНОЕ ФОТО
+    // =====================================
+
+    async function randomPhoto() {
+
+        const { data, error } =
+            await supabaseClient
+                .from("photos")
+                .select("*");
+
+
+        if (error  !data  data.length === 0) {
+
+            alert("Пока нет фотографий.");
+
+            return;
+        }
+
+
+        const random =
+            data[Math.floor(Math.random() * data.length)];
+
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+
+
+        setTimeout(() => {
+
+            alert(
+                (random.city
+                    ? "📍 " + random.city + "\n\n"
+                    : "") +
+
+                (random.caption || "Без подписи")
+            );
+
+        }, 400);
+
+    }
+
+
+    // =====================================
+    // БЕЗОПАСНОСТЬ ТЕКСТА
+    // =====================================
+
+    function escapeHtml(text) {
+
+        const div =
+            document.createElement("div");
+
+        div.textContent = text;
+
+        return div.innerHTML;
+
+    }
+
+
+    // =====================================
+    // ЗАПУСК
+    // =====================================
+
+    loadPhotos();
+
+</script>
+
+</body>
+</html>
